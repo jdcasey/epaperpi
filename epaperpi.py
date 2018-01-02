@@ -12,8 +12,11 @@ import subprocess as s
 from subprocess import Popen
 from subprocess import call
 import re
+import os
 
-BASE_URL = "http://api.wunderground.com/api/b9854ac0584a0a61/%(path)s%(query)s"
+WUNDERGROUND_KEYFILE=os.path.join(os.path.expanduser('~'), 'wunderground.key')
+
+BASE_URL = "http://api.wunderground.com/api/%(key)s/%(path)s%(query)s"
 GEOLOOKUP = "geolookup/q/autoip.json"
 CURRENT_CONDITIONS = "conditions/q/"
 HOURLY = "hourly/q/"
@@ -34,6 +37,14 @@ GPIO.setup(NET_SW, GPIO.IN)
 GPIO.setup(PWR_SW, GPIO.IN)
 
 net=None
+key=None
+lines = []
+if os.path.exists(WUNDERGROUND_KEYFILE):
+    with open(WUNDERGROUND_KEYFILE) as f:
+        key = f.read().rstrip()
+else:
+    lines = write_lines(lines, ["WUNDERGROUND KEY NOT FOUND", "Weather function will not work."], size=10)
+    sleep(5)
 
 def write_lines(lines, linesToWrite, size=16, clear=False):
     if clear is True:
@@ -62,7 +73,7 @@ def show_current_conditions(lines):
     lines = write_lines(lines, ["Retrieving Weather Data..."], clear=True, size=14)
 
     #print "Grabbing location"
-    resp = requests.get(BASE_URL % {'path': GEOLOOKUP, 'query': ''})
+    resp = requests.get(BASE_URL % {'key': key, 'path': GEOLOOKUP, 'query': ''})
     location_query = json.loads(resp.text)['location']['requesturl'].replace('.html', '.json')
     #print "Current location request URL: %s" % location_query
 
